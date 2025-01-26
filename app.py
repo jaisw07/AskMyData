@@ -3,21 +3,11 @@ import streamlit as st
 from groq import Groq
 
 # Set up the GROQ client
-os.environ["GROQ_API_KEY"] = "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"  # Replace with your API key
+os.environ["GROQ_API_KEY"] = "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"
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# Function to query GROQ chat completion
+# Function to send a query to GROQ's API for chat completion, including dataset as context and the user's prompt and receive an answer/error in return from model
 def query_groq(prompt, context):
-    """
-    Send a query to GROQ's API for chat completions.
-
-    Args:
-        prompt (str): User's query.
-        context (str): Predefined dataset as context.
-
-    Returns:
-        str: The chatbot's response or an error message.
-    """
     try:
         chat_completion = client.chat.completions.create(
             messages=[
@@ -31,7 +21,13 @@ def query_groq(prompt, context):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Streamlit App
+#Initialize 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "dataset_context" not in st.session_state:
+    st.session_state.dataset_context = None
+
+# Streamlit App UI
 st.title("AI Chatbot with GROQ")
 st.write("Ask questions based on the dataset provided!")
 
@@ -43,21 +39,37 @@ if uploaded_file:
     # Read uploaded file and extract content
     dataset_content = uploaded_file.read().decode("utf-8")
     st.sidebar.success("Dataset loaded successfully!")
+    # Store context in session state
+    st.session_state.dataset_context = dataset_content
 else:
     st.sidebar.warning("Please upload a dataset to proceed.")
-    dataset_content = None
 
 # Chat UI
-if dataset_content:
+if st.session_state.dataset_context:
     st.text_area("Dataset Preview", dataset_content, height=200, disabled=True)
+
+# Display chat history
+    st.subheader("Chat History")
+    if st.session_state.messages:
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                st.write(f"**You:** {message['content']}")
+            elif message["role"] == "assistant":
+                st.write(f"**Buddy:** {message['content']}")
+
+# User query prompt
     user_query = st.text_input("Enter your question:")
 
     if st.button("Submit"):
         if user_query.strip():
+# add user's prompt to session's messages array
+            st.session_state.messages.append({"role":"user", "content":user_query})
+# get response from groq api
             response = query_groq(user_query, dataset_content)
-            st.text_area("Answer:", response, height=300, disabled=True)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+# Display response
+            st.write(f"**Buddy:** {response}")
         else:
             st.warning("Please enter a valid question.")
 else:
     st.info("Upload a dataset to start asking questions.")
-
