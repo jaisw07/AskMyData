@@ -26,6 +26,15 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "dataset_context" not in st.session_state:
     st.session_state.dataset_context = None
+if "user_query" not in st.session_state:
+    st.session_state.user_query = ""
+
+def handle_submit():
+    if st.session_state.user_query.strip():
+        st.session_state.messages.append({"role":"user", "content":st.session_state.user_query})
+        response = query_groq(st.session_state.user_query, st.session_state.dataset_context)
+        st.session_state.messages.append({"role":"assistant", "content":response})
+        st.session_state.user_query=""
 
 # Streamlit App UI
 st.title("AI Chatbot with GROQ")
@@ -57,19 +66,11 @@ if st.session_state.dataset_context:
             elif message["role"] == "assistant":
                 st.write(f"**Buddy:** {message['content']}")
 
-# User query prompt
-    user_query = st.text_input("Enter your question:")
-
-    if st.button("Submit"):
-        if user_query.strip():
-# add user's prompt to session's messages array
-            st.session_state.messages.append({"role":"user", "content":user_query})
-# get response from groq api
-            response = query_groq(user_query, dataset_content)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-# Display response
-            st.write(f"**Buddy:** {response}")
-        else:
-            st.warning("Please enter a valid question.")
+    st.text_input(
+        "Enter your question:",
+        value = st.session_state.user_query,
+        key = "user_query",
+        on_change=handle_submit,
+    )
 else:
     st.info("Upload a dataset to start asking questions.")
