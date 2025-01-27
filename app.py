@@ -1,6 +1,8 @@
 import os
 import streamlit as st
 from groq import Groq
+import pandas as pd
+import json
 
 # Set up the GROQ client
 os.environ["GROQ_API_KEY"] = "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"
@@ -20,6 +22,22 @@ def query_groq(prompt, context):
         return chat_completion.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}"
+
+def process_dataset(uploaded_file):
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+
+    if file_extension == 'txt':
+        return uploaded_file.read().decode("utf-8")
+    elif file_extension == 'json':
+        return json.dumps(json.load(uploaded_file), indent=2)
+    elif file_extension == 'csv':
+        df = pd.read_csv(uploaded_file)
+        return df.to_csv(index=False)
+    elif file_extension == 'xlsx':
+        df = pd.read_excel(uploaded_file)
+        return df.to_csv(index = False)
+    else:
+        return None
 
 #Initialize 
 if "messages" not in st.session_state:
@@ -42,14 +60,17 @@ st.write("Ask questions based on the dataset provided!")
 
 # Upload Dataset
 st.sidebar.title("Dataset Management")
-uploaded_file = st.sidebar.file_uploader("Upload your txt dataset", type=["txt"])
+uploaded_file = st.sidebar.file_uploader("Upload your txt dataset", type=["txt", "json", "csv","xlsx"])
 
 if uploaded_file:
     # Read uploaded file and extract content
-    dataset_content = uploaded_file.read().decode("utf-8")
-    st.sidebar.success("Dataset loaded successfully!")
+    dataset_content = process_dataset(uploaded_file)
+    if dataset_content:
+        st.sidebar.success("Dataset loaded successfully!")
     # Store context in session state
-    st.session_state.dataset_context = dataset_content
+        st.session_state.dataset_context = dataset_content
+    else:
+        st.sidebar.error("Unsupported file format. Please upload a .txt, .json, .csv or .xlsx file to continue.")
 else:
     st.sidebar.warning("Please upload a dataset to proceed.")
 
