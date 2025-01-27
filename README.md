@@ -1,4 +1,4 @@
-# **AI Chatbot with GROQ**  
+# **AskMyData**  
 An AI-powered chatbot built using Streamlit and GROQ's API, designed to answer user queries based on an uploaded dataset. The chatbot supports multiple file formats for datasets, including `.txt`, `.json`, `.csv`, and `.xlsx`, and dynamically processes them to provide relevant responses.  
 
 ## **Features**  
