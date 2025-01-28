@@ -23,6 +23,14 @@ def query_groq(prompt, context):
     except Exception as e:
         return f"Error: {str(e)}"
 
+def summarize_context(context, limit = 5000):
+    if len(context) > limit:
+        return context[:limit] + "... (truncated)"
+    return context
+
+def summarize_dataframe(df, rows = 5):
+    return df.head(rows).to_csv(index = False)
+
 def process_dataset(uploaded_file):
     file_extension = uploaded_file.name.split('.')[-1].lower()
 
@@ -32,10 +40,10 @@ def process_dataset(uploaded_file):
         return json.dumps(json.load(uploaded_file), indent=2)
     elif file_extension == 'csv':
         df = pd.read_csv(uploaded_file)
-        return df.to_csv(index=False)
+        return summarize_dataframe(df)
     elif file_extension == 'xlsx':
         df = pd.read_excel(uploaded_file)
-        return df.to_csv(index = False)
+        return summarize_dataframe(df)
     else:
         return None
 
@@ -47,10 +55,28 @@ if "dataset_context" not in st.session_state:
 if "user_query" not in st.session_state:
     st.session_state.user_query = ""
 
+
+MAX_HISTORY_SIZE = 5000
+
+def trim_messages(messages, max_size = MAX_HISTORY_SIZE):
+    total_size =  0
+    trimmed_messages = []
+    for message in reversed(messages):
+        message_size = len(message["content"])
+        if total_size + message_size <= max_size:
+            trimmed_messages.append(message)
+            total_size += message_size
+        else:
+            break
+    return list(reversed(trimmed_messages))
+
+
 def handle_submit():
     if st.session_state.user_query.strip():
+        st.session_state.messages = trim_messages(st.session_state.messages)
         st.session_state.messages.append({"role":"user", "content":st.session_state.user_query})
-        response = query_groq(st.session_state.user_query, st.session_state.dataset_context)
+        summarized_context = summarize_context(st.session_state.dataset_context)
+        response = query_groq(st.session_state.user_query, summarized_context)
         st.session_state.messages.append({"role":"assistant", "content":response})
         st.session_state.user_query=""
 
