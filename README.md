@@ -32,8 +32,8 @@ Ensure you have the following installed:
 
 1. **Clone the Repository**  
    ```bash
-   git clone https://github.com/your-username/ai-chatbot-with-groq.git
-   cd ai-chatbot-with-groq
+   git clone https://github.com/jaisw07/AskMyData.git
+   cd AskMyData
    ```
 
 2. **Set Up a Virtual Environment**  
